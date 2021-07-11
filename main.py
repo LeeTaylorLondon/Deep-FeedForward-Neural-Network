@@ -65,6 +65,51 @@ def clean_data(df, verbose=0):
                 (df[lat] < nyc_max_latitude)]
     return df
 
+def euc_distance(lat1, long1, lat2, long2):
+    """ Returns the distance between two points
+     used in function data engineering """
+    return ((lat1-lat2)**2 + (long1-long2)**2)**0.5
+
+def data_engineering(df, verbose=0):
+    if verbose: print(df.head()['pickup_datetime'])
+    # convert datetime into machine readable categories
+    df['year'] = df['pickup_datetime'].dt.year
+    df['month'] = df['pickup_datetime'].dt.month
+    df['day'] = df['pickup_datetime'].dt.day
+    df['day_of_week'] = df['pickup_datetime'].dt.dayofweek
+    df['hour'] = df['pickup_datetime'].dt.hour
+    if verbose: print(df.loc[:5,['pickup_datetime,', 'year', 'month',
+                                 'day', 'day_of_week', 'hour']])
+    df = df.drop(['pickup_datetime'],axis=1)
+    # new column distance
+    df['distance'] = euc_distance(df['pickup_latitude'],
+                                  df['pickup_longtitude'],
+                                  df['dropoff_latitude'],
+                                  df['dropoff_longtitude'])
+    if verbose:
+        df.plot.scatter('fare_amount', 'distance')
+        plt.show()
+    # airports have fixed fares this affects results and learning
+    # create new column for the distance away from airports
+    airports = {'JFK_Airport':(-73.78, 40.643),
+                'Laguarida_Airport':(-73.87, 40.77),
+                'Newark_Airport':(-74.18, 40.69)}
+    for airport in airports:
+        df['pickup_dist_' + airport] = euc_distance(df['pickup_latitude'],
+                                                df['pickup_longitude'],
+                                                airports[airport][1],
+                                                airports[airport][0])
+        df['dropoff_dist_' + airport] = euc_distance(df['dropoff_latitude'],
+                                                     df['dropoff_longitude'],
+                                                     airports[airport][1],
+                                                     airports[airport][0])
+    if verbose:
+        print(df[['key', 'pickup_longitude', 'pickup_latitude',
+                  'dropoff_longitude', 'dropoff_latitude',
+                  'pickup_dist_JFK_Airport',
+                  'dropoff_dist_JFK_Airport']].head())
+    df = df.drop(['key'], axis=1)
+    return df
 
 
 if __name__ == '__main__':
