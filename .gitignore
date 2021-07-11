@@ -127,3 +127,5 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+/new-york-city-taxi-fare-prediction.zip
+/NYC_taxi.csv
