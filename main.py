@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import scale
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 
@@ -150,6 +151,16 @@ def build_model(input_shape, verbose=False):
     model.compile(loss="mse", optimizer='adam', metrics=['mse', 'accuracy'])
     return model
 
+def test_model(model, *data):
+    if len(data) != 4: raise TypeError('Incorrect amount of data passed to test_model(...).')
+    x_train, x_test, y_train, y_test = data
+    train_pred = model.predict(x_train)
+    train_rmse = np.sqrt(mean_squared_error(y_train, train_pred))
+    test_pred = model.predict(x_test)
+    test_rmse = np.sqrt(mean_squared_error(y_test, test_pred))
+    print("Train RMSE: {:0.2f}".format(train_rmse))
+    print("Test RMSE: {:0.2f}".format(test_rmse))
+
 
 if __name__ == '__main__':
     df = load_data()
@@ -160,7 +171,8 @@ if __name__ == '__main__':
     df = clean_data(df)
     df = data_engineering(df)
     df, _ = data_preprocessing(df)
-    """ Model build and learn """
+    """ Model, building, learning, and testing """
     x_train, x_test, y_train, y_test = split_data(df)
     model = build_model(x_train.shape[1])
     model.fit(x_train, y_train, epochs=1)
+    test_model(model, x_train, x_test, y_train, y_test)
