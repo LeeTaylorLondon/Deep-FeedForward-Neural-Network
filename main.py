@@ -2,6 +2,9 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import scale
+from sklearn.model_selection import train_test_split
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
 
 
 def load_data():
@@ -84,9 +87,9 @@ def data_engineering(df, verbose=0):
     df = df.drop(['pickup_datetime'],axis=1)
     # new column distance
     df['distance'] = euc_distance(df['pickup_latitude'],
-                                  df['pickup_longtitude'],
+                                  df['pickup_longitude'],
                                   df['dropoff_latitude'],
-                                  df['dropoff_longtitude'])
+                                  df['dropoff_longitude'])
     if verbose:
         df.plot.scatter('fare_amount', 'distance')
         plt.show()
@@ -130,9 +133,34 @@ def data_preprocessing(df):
     df = df_scaled.copy()
     return df, df_prescaled
 
+def split_data(df):
+    x = df.loc[:, df.columns != 'fare_amount']
+    y = df.loc[:, 'fare_amount']
+    x_train, x_test, y_train, y_test = train_test_split(x,y,test_size=0.2)
+    return x_train, x_test, y_train, y_test
+
+def build_model(input_shape, verbose=False):
+    model = Sequential()
+    model.add(Dense(128, activation='relu', input_dim=input_shape))
+    model.add(Dense(64, activation='relu'))
+    model.add(Dense(32, activation='relu'))
+    model.add(Dense(8, activation='relu'))
+    model.add(Dense(1))
+    if verbose: model.summary()
+    model.compile(loss="mse", optimizer='adam', metrics=['mse', 'accuracy'])
+    return model
+
 
 if __name__ == '__main__':
     df = load_data()
     """ Data exploration """
     # ridership_by_day(df)
     # ridership_by_hour(df)
+    """ Data cleaning, engineering, preprocessing """
+    df = clean_data(df)
+    df = data_engineering(df)
+    df, _ = data_preprocessing(df)
+    """ Model build and learn """
+    x_train, x_test, y_train, y_test = split_data(df)
+    model = build_model(x_train.shape[1])
+    model.fit(x_train, y_train, epochs=1)
