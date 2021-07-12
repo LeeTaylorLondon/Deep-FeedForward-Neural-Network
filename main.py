@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.preprocessing import scale
 
 
 def load_data():
@@ -110,6 +111,24 @@ def data_engineering(df, verbose=0):
                   'dropoff_dist_JFK_Airport']].head())
     df = df.drop(['key'], axis=1)
     return df
+
+def data_preprocessing(df):
+    df_prescaled = df.copy() # original copy of data
+    # remove fare_amount as we do not want to scale these values
+    df_scaled = df.drop(['fare_amount'], axis=1)
+    # features in df_scaled are scaled
+    df_scaled = scale(df_scaled)
+    # columns are coverted to a list
+    cols = df.columns.tolist()
+    # ensure fare_amount is removed
+    cols.remove('fare_amount')
+    # set df_scaled to cols converted to pd.DataFrame type
+    df_scaled = pd.DataFrame(df_scaled, columns=cols, index=df.index)
+    # concatenate fare_amount to scaled features
+    df_scaled = pd.concat([df_scaled, df['fare_amount']], axis=1)
+    # over write df
+    df = df_scaled.copy()
+    return df, df_prescaled
 
 
 if __name__ == '__main__':
